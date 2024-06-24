@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplicativo de Predicción</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        async function fetchMessage() {
+            const response = await fetch('/message');
+            if (response.ok) {
+                const data = await response.json();
+                document.getElementById('message').textContent = data.message;
+            } else {
+                document.getElementById('message').textContent = 'Error fetching message';
+            }
+        }
+
+        async function handleFormSubmit(event) {
+            event.preventDefault();
+            const dni = document.getElementById('input1').value;
+
+            const response = await fetch(`/sale?dni=${dni}`);
+
+            if (response.ok) {
+                const sale = await response.json();
+                let resultHtml = `
+                    <h3>Sale Details</h3>
+                    <p>Date: ${sale.date}</p>
+                    <p>Salesperson: ${sale.salesperson}</p>
+                    <p>Customer: ${sale.customer_name}</p>
+                    <p>Car: ${sale.car_make} ${sale.car_model} (${sale.car_year})</p>
+                    <p>Sale Price: $${sale.sale_price.toFixed(2)}</p>
+                    <p>Commission Earned: $${sale.commission_earned.toFixed(2)}</p>
+                `;
+                document.getElementById('message').innerHTML = resultHtml;
+
+                // Update chart with this sale data
+                drawChart({
+                    labels: ['Sale Price', 'Commission'],
+                    label: 'Sale Information',
+                    values: [sale.sale_price, sale.commission_earned]
+                });
+            } else {
+                document.getElementById('message').textContent = 'Sale not found';
+            }
+        }
+
+        function drawChart(data) {
+            var ctx = document.getElementById('myChart').getContext('2d');
+            var myChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: data.label,
+                        data: data.values,
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        window.onload = function() {
+            fetchMessage();
+            drawChart({
+                labels: ['Sale Price', 'Commission'],
+                label: 'Sale Information',
+                values: [0, 0]
+            });
+        };
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1 class="mt-5">Aplicativo de Predicción</h1>
+        <div class="row mt-3">
+            <div class="col-md-4">
+                <h2>Configuración</h2>
+                <form onsubmit="handleFormSubmit(event)">
+                    <div class="form-group">
+                        <label for="input1">DNI</label>
+                        <input type="text" class="form-control" id="input1" placeholder="Ingrese DNI">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Enviar</button>
+                </form>
+            </div>
+            <div class="col-md-8">
+                <h2>Resultados</h2>
+                <div id="message">Cargando mensaje...</div>
+                <canvas id="myChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
